@@ -1,0 +1,47 @@
+#include <WiFi.h>
+#include <WebServer.h>
+
+const char* ssid = "TU_SSID";
+const char* password = "TU_PASS";
+
+WebServer server(80);
+
+const int enaPin = 18; // PWM
+const int in1 = 25;
+const int in2 = 26;
+int speedValue = 0;
+
+void handleRoot(){
+  String html = "<html><body><h3>Motor WiFi</h3>"
+                "<input type='range' min='0' max='255' value='" + String(speedValue) + "' id='s' oninput='fetch(\"/set?vel=\"+this.value)'/>"
+                "<br><a href='/forward'>Adelante</a> <a href='/reverse'>Reversa</a> <a href='/stop'>Detener</a>"
+                "</body></html>";
+  server.send(200,"text/html",html);
+}
+void handleSet(){
+  if(server.hasArg("vel")) {
+    speedValue = server.arg("vel").toInt();
+    ledcWrite(0, speedValue);
+  }
+  handleRoot();
+}
+void handleForward(){ digitalWrite(in1,HIGH); digitalWrite(in2,LOW); handleRoot(); }
+void handleReverse(){ digitalWrite(in1,LOW); digitalWrite(in2,HIGH); handleRoot(); }
+void handleStop(){ digitalWrite(in1,LOW); digitalWrite(in2,LOW); ledcWrite(0,0); handleRoot(); }
+
+void setup(){
+  Serial.begin(115200);
+  pinMode(in1, OUTPUT); pinMode(in2, OUTPUT);
+  ledcAttachPin(enaPin, 0);
+  ledcSetup(0, 1000, 8); // canal 0, 1kHz, 8-bit
+  WiFi.begin(ssid, password);
+  while(WiFi.status()!=WL_CONNECTED){ delay(300); Serial.print("."); }
+  Serial.println(WiFi.localIP());
+  server.on("/", handleRoot);
+  server.on("/set", handleSet);
+  server.on("/forward", handleForward);
+  server.on("/reverse", handleReverse);
+  server.on("/stop", handleStop);
+  server.begin();
+}
+void loop(){ server.handleClient(); }
