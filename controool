@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Control de Motor DC</title>
+  <style>
+    body { font-family: Arial; text-align: center; margin-top: 40px; }
+    input[type=range] { width: 80%; }
+    button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h2>Control del Motor DC - WiFi</h2>
+  <p>Velocidad: <span id="velVal">0</span></p>
+  <input type="range" min="0" max="255" value="0" id="velSlider">
+  <br>
+  <button onclick="sendCmd('forward')">Adelante</button>
+  <button onclick="sendCmd('reverse')">Reversa</button>
+  <button onclick="sendCmd('stop')">Detener</button>
+
+  <script>
+    const esp32IP = "http://192.168.1.120"; // ⚠️ Cambia por la IP de tu ESP32
+    const slider = document.getElementById("velSlider");
+    const velVal = document.getElementById("velVal");
+
+    slider.oninput = () => {
+      velVal.textContent = slider.value;
+      fetch(`${esp32IP}/set?vel=${slider.value}`).catch(()=>{});
+    };
+
+    function sendCmd(cmd){
+      fetch(`${esp32IP}/${cmd}`).catch(()=>{});
+    }
+  </script>
+</body>
+</html>
